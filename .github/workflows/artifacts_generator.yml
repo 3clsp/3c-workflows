@@ -1,0 +1,60 @@
+name: "Workflow to run 3C on edk 2 and upload the results"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  clone:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Check cache
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /home/sourag/repos/
+          key: ${{ runner.os }}-cache
+
+      # If cache is not found, then clone the edk2 and 3C repos
+      - name: Clone edk2
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/tianocore/edk2.git /home/sourag/repos/edk2
+      
+      - name: Clone 3C
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/3clsp/checkedc-llvm-project.git /home/sourag/repos/checkedc-llvm-project
+
+        # This step pulls the latest changes from the edk2 and 3C repos
+        # It doesn't matter if there was a cache hit or not since
+        # pulling right after cloning doesn't have any affect.
+        - name: Pull latest changes for edk2
+          working-directory: /home/sourag/repos/edk2
+          run: |
+            git pull
+
+        - name: Pull latest changes for 3C
+          working-directory: /home/sourag/repos/checkedc-llvm-project
+          run: |
+            git pull
+
+  patch:
+    runs-on: self-hosted
+    needs: clone
+
+    # We need to update the edk2 repo's build script to generate compile_commands.json
+    # Use the build.py from our repo to do this
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Patch edk2
+        run: |
+          cp $GITHUB_WORKSPACE/build.py /home/sourag/repos/edk2/BaseTools/Source/Python/build/build.py
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}

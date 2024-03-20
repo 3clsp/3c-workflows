@@ -36,15 +36,15 @@ jobs:
         # This step pulls the latest changes from the edk2 and 3C repos
         # It doesn't matter if there was a cache hit or not since
         # pulling right after cloning doesn't have any affect.
-        - name: Pull latest changes for edk2
-          working-directory: /home/sourag/repos/edk2
-          run: |
-            git pull
+      - name: Pull latest changes for edk2
+        working-directory: /home/sourag/repos/edk2
+        run: |
+          git pull
 
-        - name: Pull latest changes for 3C
-          working-directory: /home/sourag/repos/checkedc-llvm-project
-          run: |
-            git pull
+      - name: Pull latest changes for 3C
+        working-directory: /home/sourag/repos/checkedc-llvm-project
+        run: |
+          git pull
 
   patch:
     runs-on: self-hosted

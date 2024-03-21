@@ -64,6 +64,7 @@ jobs:
         run: |
           cp $GITHUB_WORKSPACE/run_3c.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/run_3c.py
           cp $GITHUB_WORKSPACE/remove_msabi.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/remove_msabi.py
+          cp $GITHUB_WORKSPACE/generate_ccommands.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/generate_ccommands.py
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
   
@@ -121,9 +122,38 @@ jobs:
           && make -C BaseTools \
           && OvmfPkg/build.sh -t CLANGPDB"
 
-  cleanup:
+  run_3c:
     runs-on: self-hosted
     needs: build_edk2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Run 3C
+        run: |
+          docker exec edk2-3c-container bash -c \
+          "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
+          && python3 run_3c.py"
+
+  run_analysis_and_upload_results:
+    runs-on: self-hosted
+    needs: run_3c
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+     - name: Copy results
+        run: |
+          mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE
+          mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+  cleanup:
+    runs-on: self-hosted
+    needs: run_analysis_and_upload_results
 
     steps:
       - name: Checkout

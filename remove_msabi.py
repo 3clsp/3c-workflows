@@ -18,9 +18,7 @@ for file in files:
         if not "-DEFIAPI=__attribute__((ms_abi))" in line:
             out += line
         line = text.readline()
-    print(out)
     text.close()
     # write back the file
     with open(file, "w") as f:
         f.write(out)
-    # exit(0)

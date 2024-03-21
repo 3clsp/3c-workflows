@@ -230,9 +230,7 @@ def LaunchCommand(Command, WorkingDir,ModuleAuto = None):
     EndOfProcedure = None
     try:
         # launch the command
-        print("Directory is ", WorkingDir)
         Command = "bear -- " + Command
-        print("############## Command is ############ ", Command)
         Proc = MakeSubProc(Command, stdout=PIPE, stderr=STDOUT, env=os.environ, cwd=WorkingDir, bufsize=-1, shell=True)
 
         # launch two threads to read the STDOUT and STDERR
@@ -665,7 +663,6 @@ class BuildTask:
     def Start(self):
         EdkLogger.quiet("Building ... %s" % repr(self.BuildItem))
         Command = self.BuildItem.BuildCommand + [self.BuildItem.Target]
-        print("Command for build is ", Command)
         self.BuildTread = Thread(target=self._CommandThread, args=(Command, self.BuildItem.WorkingDir))
         self.BuildTread.name = "build thread"
         self.BuildTread.daemon = False
@@ -829,7 +826,6 @@ class Build():
             self.TargetTxt = TargetObj.Target
             self.ToolDef = ToolDefObj.ToolDef
         if not (self.LaunchPrebuildFlag and os.path.exists(self.PlatformBuildPath)):
-            print("Calling initbuild")
             self.InitBuild()
 
         self.AutoGenMgr = None
@@ -2263,7 +2259,6 @@ class Build():
         return Wa, BuildModules
 
     def _MultiThreadBuildPlatform(self):
-        print("Multi thread build")
         SaveFileOnChange(self.PlatformBuildPath, '# DO NOT EDIT \n# FILE auto-generated\n', False)
         for BuildTarget in self.BuildTargetList:
             GlobalData.gGlobalDefines['TARGET'] = BuildTarget
@@ -2286,13 +2281,7 @@ class Build():
                         self.BuildModules = self.SetupMakeSetting(Wa)
                 else:
                     Wa, self.BuildModules = self.PerformAutoGen(BuildTarget,ToolChain)
-                print("##### MODULES #####")
-                print(self.BuildModules)
-                print("That's it !!!")
                 Pa = Wa.AutoGenObjectList[0]
-                print("Type of Pa ", type(Pa))
-                print("PA is ", Pa)
-                print("Pa build command is ", Pa.BuildCommand)
                 GlobalData.gAutoGenPhase = False
 
                 if GlobalData.gBinCacheSource:
@@ -2364,7 +2353,6 @@ class Build():
                     #
                     MapBuffer = []
                     if self.LoadFixAddress != 0:
-                        print("################# LOADFIX ##################")
                         self._CollectModuleMapBuffer(MapBuffer, ModuleList)
 
                     if self.Fdf:
@@ -2375,8 +2363,6 @@ class Build():
                         if GenFdsApi(Wa.GenFdsCommandDict, self.Db):
                             EdkLogger.error("build", COMMAND_FAILURE)
                         Threshold = self.GetFreeSizeThreshold()
-                        print("###################### FDF #################")
-                        print("Threshold ", Threshold)
                         if Threshold:
                             self.CheckFreeSizeThreshold(Threshold, Wa.FvDir)
 
@@ -2711,14 +2697,12 @@ def Main():
         MyBuild = Build(Target, Workspace, Option,LogQ)
         GlobalData.gCommandLineDefines['ARCH'] = ' '.join(MyBuild.ArchList)
         if not (MyBuild.LaunchPrebuildFlag and os.path.exists(MyBuild.PlatformBuildPath)):
-            print("Launching this shit")
             MyBuild.Launch()
 
         #
         # All job done, no error found and no exception raised
         #
         BuildError = False
-        print("#################### EVERYTHING DONE ################################")
     except FatalError as X:
         if MyBuild is not None:
             # for multi-thread build exits safely
@@ -2800,7 +2784,6 @@ def Main():
     return ReturnCode
 
 if __name__ == '__main__':
-    print("### Starting build process")
     try:
         mp.set_start_method('spawn')
     except:

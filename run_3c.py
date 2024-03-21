@@ -8,11 +8,10 @@ from colorama import Fore, Style
 EDK2_PATH = "/edk2"
 BUILD_PATH = f"{EDK2_PATH}/Build"
 BASE_CMD = "OvmfPkg/build.sh -t CLANGPDB".split(" ")
-OUT_PATH = "/clang/clang/tools/3c/utils/port_tools/jsons"
-RUN_PATH = "/clang/clang/tools/3c/utils/port_tools"
-THREEC_BIN = "/clang/build/bin/3c" 
-FAILED_PATH = "/clang/clang/tools/3c/utils/port_tools/fmodules"
-SKIP_FILE = "/edk2/Build/OvmfX64/DEBUG_CLANGPDB/X64/CryptoPkg/Library/OpensslLib/OpensslLibCrypto/compile_commands.json"
+OUT_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons"
+RUN_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/"
+THREEC_BIN = "/checkedc-llvm-project/build/bin/3c" 
+FAILED_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed"
 
 clean = False
 build = False
@@ -115,11 +114,6 @@ logging.info("compile_commands.json:")
 files = output.stdout.decode("utf-8").strip()
 
 for file in files.split("\n"):
-    if file != SKIP_FILE:
-        print(f"{Fore.RED}Skipping {file}")
-        continue
-    # if file != "/edk2/Build/OvmfX64/DEBUG_CLANGPDB/X64/CryptoPkg/Library/BaseCryptLib/SecCryptLib/compile_commands.json":
-    #     continue
     print(f"{Fore.YELLOW}Running 3c with compile_commands {file}")
     print(Style.RESET_ALL)
     patho = os.path.dirname(file)
@@ -131,11 +125,5 @@ for file in files.split("\n"):
     # do_work(file, path, patho)
     do_work(file, path, patho, True)
     
-    # input("Press enter to continue")
     # Remove the compile_commands.json from the edk2 root
     os.remove(f"{EDK2_PATH}/compile_commands.json")
-    # exit(0)
-
-
-# 1683964368000000000 with size of 928584
-# 1683964368000000000 with size of 928584

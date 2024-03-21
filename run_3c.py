@@ -12,6 +12,7 @@ OUT_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons"
 RUN_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/"
 THREEC_BIN = "/checkedc-llvm-project/build/bin/3c" 
 FAILED_PATH = "/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed"
+SKIP_FILE = "/edk2/Build/OvmfX64/DEBUG_CLANGPDB/X64/CryptoPkg/Library/OpensslLib/OpensslLibCrypto/compile_commands.json"
 
 clean = False
 build = False
@@ -114,6 +115,10 @@ logging.info("compile_commands.json:")
 files = output.stdout.decode("utf-8").strip()
 
 for file in files.split("\n"):
+    if file == SKIP_FILE:
+        print(f"{Fore.WHITE}Skipping {file}")
+        print(Style.RESET_ALL)
+        continue
     print(f"{Fore.YELLOW}Running 3c with compile_commands {file}")
     print(Style.RESET_ALL)
     patho = os.path.dirname(file)

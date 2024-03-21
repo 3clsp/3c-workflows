@@ -9,24 +9,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Check cache
         id: cache
         run: |
-          echo "::set-output name=cache-hit::false"
-          if [ -d /home/sourag/repos/edk2 ] && [ -d /home/sourag/repos/checkedc-llvm-project ]; then
-            echo "::set-output name=cache-hit::true"
+          echo "::set-output name=cache-hit1::false"
+          echo "::set-output name=cache-hit2::false"
+          if [ -d /home/sourag/repos/edk2 ]; then
+            echo "::set-output name=cache-hit1::true"
+          fi
+          if [ -d /home/sourag/repos/checkedc-llvm-project ]; then
+            echo "::set-output name=cache-hit2::true"
           fi
 
       # If cache is not found, then clone the edk2 and 3C repos.
       - name: Clone edk2
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit1 != 'true'
         run: |
           git clone https://github.com/tianocore/edk2.git /home/sourag/repos/edk2
+          cd edk2 && git submodule update --init
       
       - name: Clone 3C
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit2 != 'true'
         run: |
           git clone https://github.com/3clsp/checkedc-llvm-project.git /home/sourag/repos/checkedc-llvm-project
 
@@ -51,7 +56,7 @@ jobs:
     # Use the build.py from our repo to do this.
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Patch edk2
         run: |
@@ -74,7 +79,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       # edk2 will be built inside the docker container.
       # We only build the 3C repo on the host.
@@ -92,7 +97,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build docker image
         run: |
@@ -111,14 +116,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build edk2
         run: |
           docker exec edk2-3c-container bash -c \
           "cd /edk2 \
           && source edksetup.sh \
-          && git submodule update --init \
           && make -C BaseTools \
           && OvmfPkg/build.sh -t CLANGPDB"
 
@@ -128,7 +132,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run 3C
         run: |
@@ -142,7 +146,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
      - name: Copy results
         run: |
@@ -157,7 +161,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Stop docker container
         run: |

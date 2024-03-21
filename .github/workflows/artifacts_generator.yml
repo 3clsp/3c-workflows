@@ -118,6 +118,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Delete the old Build folder if it exists
+      - name: Delete old build folder
+        run: |
+          if [ -d /home/sourag/repos/edk2/Build ]; then
+            sudo rm -rf /home/sourag/repos/edk2/Build
+          fi
+
       - name: Build edk2
         run: |
           docker exec edk2-3c-container bash -c \
@@ -133,6 +140,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      # Delete old results if they exist
+      - name: Delete old results
+        run: |
+          if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons ]; then
+            sudo rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons
+          fi
+          if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed ]; then
+            sudo rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
+          fi
 
       - name: Run 3C
         run: |

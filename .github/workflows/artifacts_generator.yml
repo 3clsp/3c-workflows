@@ -120,9 +120,11 @@ jobs:
 
       # Delete the old Build folder if it exists
       - name: Delete old build folder
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
         run: |
           if [ -d /home/sourag/repos/edk2/Build ]; then
-            sudo rm -rf /home/sourag/repos/edk2/Build
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/edk2/Build
           fi
 
       - name: Build edk2
@@ -143,12 +145,14 @@ jobs:
       
       # Delete old results if they exist
       - name: Delete old results
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
         run: |
           if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons ]; then
-            sudo rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons
           fi
           if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed ]; then
-            sudo rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
           fi
 
       - name: Run 3C

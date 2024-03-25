@@ -157,6 +157,12 @@ jobs:
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           PASSWORD: ${{ secrets.PASSWORD }}
+        
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: 3c-results
+          path: ${{ github.workspace }}/jsons
 
   cleanup:
     needs: run_analysis_and_upload_results

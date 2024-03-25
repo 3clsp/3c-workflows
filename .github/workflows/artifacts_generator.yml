@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  runs-on: self-hosted
   clone:
+    runs-on: self-hosted
     steps:
       - name: Check cache
         id: cache
@@ -45,6 +45,7 @@ jobs:
           git pull
 
   patch:
+    runs-on: self-hosted
     needs: clone
 
     # We need to update the edk2 repo's build script to generate compile_commands.json
@@ -70,6 +71,7 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
   
   build_3c:
+    runs-on: self-hosted
     needs: patch
 
     steps:
@@ -84,6 +86,7 @@ jobs:
           ninja 3c
 
   build_docker:
+    runs-on: self-hosted
     needs: build_3c
 
     steps:
@@ -100,6 +103,7 @@ jobs:
           /home/sourag/repos/checkedc-llvm-project:/checkedc-llvm-project edk2-3c
 
   build_edk2:
+    runs-on: self-hosted
     needs: build_docker
 
     steps:
@@ -122,6 +126,7 @@ jobs:
           && OvmfPkg/build.sh -t CLANGPDB"
 
   run_3c:
+    runs-on: self-hosted
     needs: build_edk2
 
     steps:
@@ -145,6 +150,7 @@ jobs:
           && python3 run_3c.py"
 
   run_analysis_and_upload_results:
+    runs-on: self-hosted
     needs: run_3c
 
     steps:
@@ -159,6 +165,7 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
 
   cleanup:
+    runs-on: self-hosted
     needs: run_analysis_and_upload_results
 
     steps:

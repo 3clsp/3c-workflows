@@ -4,13 +4,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  runs-on: self-hosted
   clone:
-    runs-on: self-hosted
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Check cache
         id: cache
         run: |
@@ -49,12 +45,12 @@ jobs:
           git pull
 
   patch:
-    runs-on: self-hosted
     needs: clone
 
     # We need to update the edk2 repo's build script to generate compile_commands.json
     # Use the build.py from our repo to do this.
     steps:
+      # Checkout is neede here since we will be using files from the repo.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -74,13 +70,9 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
   
   build_3c:
-    runs-on: self-hosted
     needs: patch
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
       # edk2 will be built inside the docker container.
       # We only build the 3C repo on the host.
       - name: Build 3C
@@ -92,32 +84,25 @@ jobs:
           ninja 3c
 
   build_docker:
-    runs-on: self-hosted
     needs: build_3c
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Build docker image
         run: |
           docker build -t edk2-3c $GITHUB_WORKSPACE
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
+      # Start the container with both the edk2 and 3C repos mounted.
       - name: Start docker container
         run: |
           docker run -di --name edk2-3c-container -v /home/sourag/repos/edk2:/edk2 -v \
           /home/sourag/repos/checkedc-llvm-project:/checkedc-llvm-project edk2-3c
 
   build_edk2:
-    runs-on: self-hosted
     needs: build_docker
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       # Delete the old Build folder if it exists
       - name: Delete old build folder
         env:
@@ -127,6 +112,7 @@ jobs:
             echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/edk2/Build
           fi
 
+      # Normal build process for edk2, but inside the docker container.
       - name: Build edk2
         run: |
           docker exec edk2-3c-container bash -c \
@@ -136,13 +122,9 @@ jobs:
           && OvmfPkg/build.sh -t CLANGPDB"
 
   run_3c:
-    runs-on: self-hosted
     needs: build_edk2
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
       # Delete old results if they exist
       - name: Delete old results
         env:
@@ -155,6 +137,7 @@ jobs:
             echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
           fi
 
+      # Invoke the script which calls 3c on all modules separately.
       - name: Run 3C
         run: |
           docker exec edk2-3c-container bash -c \
@@ -162,13 +145,9 @@ jobs:
           && python3 run_3c.py"
 
   run_analysis_and_upload_results:
-    runs-on: self-hosted
     needs: run_3c
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Copy results
         run: |
           echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE
@@ -180,13 +159,11 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
 
   cleanup:
-    runs-on: self-hosted
     needs: run_analysis_and_upload_results
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      # Removing container is needed to avoid conflicts with the next run.
+      # If we don't remove the container, the next run will fail.
       - name: Stop docker container
         run: |
           docker stop edk2-3c-container

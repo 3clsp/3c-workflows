@@ -17,7 +17,7 @@ SKIP_FILE = "/edk2/Build/OvmfX64/DEBUG_CLANGPDB/X64/CryptoPkg/Library/OpensslLib
 clean = False
 build = False
 
-def do_work(compile_commands, path, patho, with_itypes=False):
+def do_work(compile_commands, path, patho, with_itypes=False, without_hu=False):
     # Copy the compile_commands.json to the edk2 root
     shutil.copy(file, EDK2_PATH)
     os.chdir(RUN_PATH)
@@ -26,6 +26,9 @@ def do_work(compile_commands, path, patho, with_itypes=False):
     args = ["python3", "convert_project.py", "-pr", EDK2_PATH, "-p", THREEC_BIN, "--extra-3c-arg", "'-alltypes'", "--extra-3c-arg", "'--allow-rewrite-failures'"]
     if with_itypes:
         args.extend(["--extra-3c-arg", "'--infer-types-for-undefs'"])
+
+    if without_hu:
+        args.extend(["--extra-3c-arg", "'--disable-arr-hu'"])
     
     output = subprocess.run(args)
     if output.returncode != 0:
@@ -53,7 +56,7 @@ def do_work(compile_commands, path, patho, with_itypes=False):
                 print(Style.RESET_ALL)
                 for json in path_files:
                     if json.endswith(".json"):
-                        os.rename(f"{path}/{json}", f"{path}/{json}.without_itypes")
+                        os.rename(f"{path}/{json}", f"{path}/{json}.with_hu")
 
             # Move the json files to the output directory
             for json in jsons:
@@ -127,8 +130,8 @@ for file in files.split("\n"):
     os.makedirs(path, exist_ok=True)
     print(Style.RESET_ALL)
     
-    # do_work(file, path, patho)
     do_work(file, path, patho, True)
+    do_work(file, path, patho, True, True)
     
     # Remove the compile_commands.json from the edk2 root
     os.remove(f"{EDK2_PATH}/compile_commands.json")

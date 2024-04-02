@@ -121,13 +121,14 @@ files = output.stdout.decode("utf-8").strip()
 
 # Parse the args
 options = []
-for arg in sys.argv:
+argvs = sys.argv[1:]
+for arg in argvs:
     option = ""
     if arg.startswith("--"):
         option = arg
     else:
         option = "--" + arg
-    option = "--extra-3c-arg" + "'" + option + "'"
+    option = "--extra-3c-arg=" + "'" + option + "'"
     options.append(option)
 
 for file in files.split("\n"):

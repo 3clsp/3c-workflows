@@ -2,6 +2,10 @@ name: "Workflow to run 3C on edk 2 and upload the results"
 
 on:
   workflow_dispatch:
+    inputs:
+      options:
+        description: "Space separated list of options to run 3C with."
+        required: false
 
 jobs:
   clone:
@@ -147,7 +151,7 @@ jobs:
         run: |
           docker exec edk2-3c-container bash -c \
           "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
-          && python3 run_3c.py"
+          && python3 run_3c.py ${{ github.event.inputs.options }}"
 
   run_analysis_and_upload_results:
     runs-on: self-hosted
@@ -165,10 +169,11 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
         
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: 3c-results
           path: ${{ github.workspace }}/jsons
+          retention-days: 1
 
   cleanup:
     runs-on: self-hosted

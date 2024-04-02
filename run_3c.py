@@ -17,18 +17,20 @@ SKIP_FILE = "/edk2/Build/OvmfX64/DEBUG_CLANGPDB/X64/CryptoPkg/Library/OpensslLib
 clean = False
 build = False
 
-def do_work(compile_commands, path, patho, with_itypes=False, without_hu=False):
+def do_work(compile_commands, path, patho, options=[]):
     # Copy the compile_commands.json to the edk2 root
-    shutil.copy(file, EDK2_PATH)
+    shutil.copy(compile_commands, EDK2_PATH)
     os.chdir(RUN_PATH)
 
     # Run 3c
     args = ["python3", "convert_project.py", "-pr", EDK2_PATH, "-p", THREEC_BIN, "--extra-3c-arg", "'-alltypes'", "--extra-3c-arg", "'--allow-rewrite-failures'"]
-    if with_itypes:
-        args.extend(["--extra-3c-arg", "'--infer-types-for-undefs'"])
+    if options:
+        args.extend(options)
+    # if with_itypes:
+    #     args.extend(["--extra-3c-arg", "'--infer-types-for-undefs'"])
 
-    if without_hu:
-        args.extend(["--extra-3c-arg", "'--disable-arr-hu'"])
+    # if without_hu:
+    #     args.extend(["--extra-3c-arg", "'--disable-arr-hu'"])
     
     output = subprocess.run(args)
     if output.returncode != 0:
@@ -37,7 +39,7 @@ def do_work(compile_commands, path, patho, with_itypes=False, without_hu=False):
         path = FAILED_PATH + patho
         os.makedirs(path, exist_ok=True)
         # Save the failed compile commands
-        shutil.copy(file, path)
+        shutil.copy(compile_commands, path)
     else:
         print(f"{Fore.GREEN}3c succeeded")
         print(Style.RESET_ALL)
@@ -49,14 +51,14 @@ def do_work(compile_commands, path, patho, with_itypes=False, without_hu=False):
             print(Style.RESET_ALL)
         else:
             # Since we run 3c two times per module, we need to rename the json files
-            path_files = os.listdir(path)
-            path_json_files_exist = any(f.endswith(".json") for f in path_files)
-            if path_json_files_exist:
-                print(f"{Fore.WHITE}Json files already exist in the output directory")
-                print(Style.RESET_ALL)
-                for json in path_files:
-                    if json.endswith(".json"):
-                        os.rename(f"{path}/{json}", f"{path}/{json}.with_hu")
+            # path_files = os.listdir(path)
+            # path_json_files_exist = any(f.endswith(".json") for f in path_files)
+            # if path_json_files_exist:
+            #     print(f"{Fore.WHITE}Json files already exist in the output directory")
+            #     print(Style.RESET_ALL)
+            #     for json in path_files:
+            #         if json.endswith(".json"):
+            #             os.rename(f"{path}/{json}", f"{path}/{json}.with_hu")
 
             # Move the json files to the output directory
             for json in jsons:
@@ -64,19 +66,19 @@ def do_work(compile_commands, path, patho, with_itypes=False, without_hu=False):
                     shutil.move(json, path)
 
 
-if len(sys.argv) > 1:
-    if "clean" in sys.argv:
-        clean = True
-    if "build" in sys.argv:
-        build = True
-    if "help" in sys.argv:
-        print("Usage: python3 build.py [clean] [build] [help]")
-        print("clean: Remove existing build directory")
-        print("build: Build the project")
-        print("help: Print this message")
-        exit(0)
-else:
-    print("No arguments provided. Running 3c only")
+# if len(sys.argv) > 1:
+#     if "clean" in sys.argv:
+#         clean = True
+#     if "build" in sys.argv:
+#         build = True
+#     if "help" in sys.argv:
+#         print("Usage: python3 build.py [clean] [build] [help]")
+#         print("clean: Remove existing build directory")
+#         print("build: Build the project")
+#         print("help: Print this message")
+#         exit(0)
+# else:
+#     print("No arguments provided. Running 3c only")
 
 # Make sure we are running it inside the docker container
 if not os.path.exists(EDK2_PATH):
@@ -86,20 +88,20 @@ if not os.path.exists(EDK2_PATH):
 
 os.chdir(EDK2_PATH)
 # Only clean if the user wants to
-if clean:
-    # Remove existing build
-    if os.path.exists(BUILD_PATH):
-        logging.info("Removing Build directory")
-        subprocess.run(["OvmfPkg/build.sh", "-t", "CLANGPDB", "clean"])
-        subprocess.run(["rm", "-rf", BUILD_PATH])
+# if clean:
+#     # Remove existing build
+#     if os.path.exists(BUILD_PATH):
+#         logging.info("Removing Build directory")
+#         subprocess.run(["OvmfPkg/build.sh", "-t", "CLANGPDB", "clean"])
+#         subprocess.run(["rm", "-rf", BUILD_PATH])
 
-if build:
-    # Build the project
-    logging.info("Building the project")
-    output = subprocess.run(BASE_CMD)
-    if output.returncode != 0:
-        logging.error("Build failed")
-        exit(1)
+# if build:
+#     # Build the project
+#     logging.info("Building the project")
+#     output = subprocess.run(BASE_CMD)
+#     if output.returncode != 0:
+#         logging.error("Build failed")
+#         exit(1)
 
 # Check if the build directory exists
 if not os.path.exists(BUILD_PATH):
@@ -117,6 +119,17 @@ if output.returncode != 0:
 logging.info("compile_commands.json:")
 files = output.stdout.decode("utf-8").strip()
 
+# Parse the args
+options = []
+for arg in sys.argv:
+    option = ""
+    if arg.startswith("--"):
+        option = arg
+    else:
+        option = "--" + arg
+    option = "--extra-3c-arg" + "'" + option + "'"
+    options.append(option)
+
 for file in files.split("\n"):
     if file == SKIP_FILE:
         print(f"{Fore.WHITE}Skipping {file}")
@@ -130,8 +143,7 @@ for file in files.split("\n"):
     os.makedirs(path, exist_ok=True)
     print(Style.RESET_ALL)
     
-    do_work(file, path, patho, True)
-    do_work(file, path, patho, True, True)
+    do_work(file, path, patho, options)
     
     # Remove the compile_commands.json from the edk2 root
     os.remove(f"{EDK2_PATH}/compile_commands.json")

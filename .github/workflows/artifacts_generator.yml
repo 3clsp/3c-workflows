@@ -14,24 +14,24 @@ jobs:
       - name: Check cache
         id: cache
         run: |
-          echo "{cache-hit1}={false}" >> $GITHUB_OUTPUT
-          echo "{cache-hit2}={false}" >> $GITHUB_OUTPUT
+          echo "{cache-hit1}={1}" >> $GITHUB_OUTPUT
+          echo "{cache-hit2}={1}" >> $GITHUB_OUTPUT
           if [ -d /home/sourag/repos/edk2 ]; then
-            echo "{cache-hit1}={true}" >> $GITHUB_OUTPUT
+            echo "{cache-hit1}={0}" >> $GITHUB_OUTPUT
           fi
           if [ -d /home/sourag/repos/checkedc-llvm-project ]; then
-            echo "{cache-hit2}={true}" >> $GITHUB_OUTPUT
+            echo "{cache-hit2}={0}" >> $GITHUB_OUTPUT
           fi
 
       # If cache is not found, then clone the edk2 and 3C repos.
       - name: Clone edk2
-        if: steps.cache.outputs.cache-hit1 != 'true'
+        if: steps.cache.outputs.cache-hit1 != 0
         run: |
           git clone https://github.com/tianocore/edk2.git /home/sourag/repos/edk2
           cd /home/sourag/repos/edk2 && git submodule update --init
       
       - name: Clone 3C
-        if: steps.cache.outputs.cache-hit2 != 'true'
+        if: steps.cache.outputs.cache-hit2 != 0
         run: |
           git clone https://github.com/3clsp/checkedc-llvm-project.git /home/sourag/repos/checkedc-llvm-project
 

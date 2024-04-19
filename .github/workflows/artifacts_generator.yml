@@ -128,6 +128,13 @@ jobs:
           && source edksetup.sh \
           && make -C BaseTools \
           && OvmfPkg/build.sh -t CLANGPDB"
+      
+      # MS ABI causes issues with clang source manager.
+      - name: Ramove ms_abi
+        run: |
+          docker exec edk2-3c-container bash -c \
+          "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
+          && python3 remove_msabi.py"
 
   run_3c:
     runs-on: self-hosted

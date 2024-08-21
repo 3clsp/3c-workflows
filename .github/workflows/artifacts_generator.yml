@@ -171,9 +171,9 @@ jobs:
       - name: Copy results
         run: |
           echo $PASSWORD | sudo -S mkdir -p $GIHUB_WORKSPACE/results
-          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE/results
-          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE/results
-          echo $PASSWORD | sudo -S mv /home/sourag/repos/edk2/out.checked $GIHUB_WORKSPACE/results
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE/results/jsons
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE/results/failed
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/edk2/out.checked $GIHUB_WORKSPACE/results/src
           echo $PASSWORD | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE/results
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}

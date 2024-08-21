@@ -163,17 +163,18 @@ jobs:
           "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
           && python3 run_3c.py ${{ github.event.inputs.options }}"
 
-  run_analysis_and_upload_results:
+  upload_results:
     runs-on: self-hosted
     needs: run_3c
 
     steps:
       - name: Copy results
         run: |
-          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE
-          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE
-          echo $PASSWORD | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE/jsons
-          echo $PASSWORD | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE/failed
+          mkdir -p $GIHUB_WORKSPACE/results
+          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE/results
+          echo $PASSWORD | sudo -S mv /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE/results
+          echo $PASSWORD | sudo -S mv /home/sourag/repos/edk2/out.checked $GIHUB_WORKSPACE/results
+          echo $PASSWORD | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE/results
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           PASSWORD: ${{ secrets.PASSWORD }}
@@ -182,7 +183,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 3c-results
-          path: ${{ github.workspace }}/jsons
+          path: ${{ github.workspace }}/results
           retention-days: 1
 
   cleanup:

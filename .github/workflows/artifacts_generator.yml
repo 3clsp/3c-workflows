@@ -188,7 +188,7 @@ jobs:
 
   cleanup:
     runs-on: self-hosted
-    needs: run_analysis_and_upload_results
+    needs: upload_results
 
     steps:
       # Removing container is needed to avoid conflicts with the next run.

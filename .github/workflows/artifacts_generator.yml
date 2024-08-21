@@ -170,20 +170,19 @@ jobs:
     steps:
       - name: Copy results
         run: |
-          echo $PASSWORD | sudo -S mkdir -p $GIHUB_WORKSPACE/results
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons $GITHUB_WORKSPACE/results/jsons
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed $GITHUB_WORKSPACE/results/failed
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/edk2/out.checked $GIHUB_WORKSPACE/results/src
-          echo $PASSWORD | sudo -S chown -R $USER:$USER $GITHUB_WORKSPACE/results
+          mkdir -p results
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons results/jsons
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed results/failed
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/edk2/out.checked results/src
+          echo $PASSWORD | sudo -S chown -R $USER:$USER results
         env:
-          GITHUB_WORKSPACE: ${{ github.workspace }}
           PASSWORD: ${{ secrets.PASSWORD }}
         
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: 3c-results
-          path: ${{ github.workspace }}/results
+          path: results
           retention-days: 1
 
   cleanup:

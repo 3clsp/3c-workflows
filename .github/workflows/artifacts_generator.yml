@@ -103,6 +103,21 @@ jobs:
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
+      # We use the same name every time. So kill the container if
+      # if it is already runnig.
+      - name: Check and remove the existing container
+        run: |
+          CONTAINER_NAME="edk2-3c-container"
+          if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
+              echo "Container $CONTAINER_NAME is running. Killing and removing it..."
+            docker kill $CONTAINER_NAME
+            docker rm $CONTAINER_NAME
+          elif [ "$(docker ps -a -q -f name=$CONTAINER_NAME)" ]; then
+            # Check if the container exists but is not running
+            echo "Container $CONTAINER_NAME exists but is not running. Removing it..."
+            docker rm $CONTAINER_NAME
+          fi
+
       # Start the container with both the edk2 and 3C repos mounted.
       - name: Start docker container
         run: |

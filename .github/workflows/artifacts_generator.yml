@@ -32,7 +32,6 @@ jobs:
         run: |
           git clone https://github.com/tianocore/edk2.git /home/sourag/repos2/edk2
           cd /home/sourag/repos2/edk2 && git submodule update --init
-          cd /home/sourag/repos2/edk2 && git checkout 39462fcd99349732ef561cda71c4c633b8ce8246
       
       - name: Clone 3C
         if: steps.cache.outputs.cache-hit2 != '0'

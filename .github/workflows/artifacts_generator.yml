@@ -16,10 +16,10 @@ jobs:
         run: |
           cache_hit1=1
           cache_hit2=1
-          if [ -d /home/sourag/repos/edk2 ]; then
+          if [ -d /home/sourag/repos2/edk2 ]; then
             cache_hit1=0
           fi
-          if [ -d /home/sourag/repos/checkedc-llvm-project ]; then
+          if [ -d /home/sourag/repos2/checkedc-llvm-project ]; then
             cache_hit2=0
           fi
           echo "cache-hit1=${cache_hit1}" >> $GITHUB_OUTPUT
@@ -30,24 +30,26 @@ jobs:
       - name: Clone edk2
         if: steps.cache.outputs.cache-hit1 != '0'
         run: |
-          git clone https://github.com/tianocore/edk2.git /home/sourag/repos/edk2
-          cd /home/sourag/repos/edk2 && git submodule update --init
+          git clone https://github.com/tianocore/edk2.git /home/sourag/repos2/edk2
+          cd /home/sourag/repos2/edk2 && git submodule update --init
+          cd /home/sourag/repos2/edk2 && git checkout 39462fcd99349732ef561cda71c4c633b8ce8246
       
       - name: Clone 3C
         if: steps.cache.outputs.cache-hit2 != '0'
         run: |
-          git clone https://github.com/3clsp/checkedc-llvm-project.git /home/sourag/repos/checkedc-llvm-project
+          git clone https://github.com/3clsp/checkedc-llvm-project.git /home/sourag/repos2/checkedc-llvm-project
 
         # This step pulls the latest changes from the edk2 and 3C repos
         # It doesn't matter if there was a cache hit or not since
         # pulling right after cloning doesn't have any affect.
       - name: Pull latest changes for edk2
-        working-directory: /home/sourag/repos/edk2
+        working-directory: /home/sourag/repos2/edk2
         run: |
           git pull
+          git checkout 39462fcd99349732ef561cda71c4c633b8ce8246
 
       - name: Pull latest changes for 3C
-        working-directory: /home/sourag/repos/checkedc-llvm-project
+        working-directory: /home/sourag/repos2/checkedc-llvm-project
         run: |
           git pull
 
@@ -64,16 +66,16 @@ jobs:
 
       - name: Patch edk2
         run: |
-          cp $GITHUB_WORKSPACE/build.py /home/sourag/repos/edk2/BaseTools/Source/Python/build/build.py
+          cp $GITHUB_WORKSPACE/build.py /home/sourag/repos2/edk2/BaseTools/Source/Python/build/build.py
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
       # Copy helper scripts to the 3C repo
       - name: Patch 3C
         run: |
-          cp $GITHUB_WORKSPACE/run_3c.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/run_3c.py
-          cp $GITHUB_WORKSPACE/remove_msabi.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/remove_msabi.py
-          cp $GITHUB_WORKSPACE/generate_ccommands.py /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/generate_ccommands.py
+          cp $GITHUB_WORKSPACE/run_3c.py /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/run_3c.py
+          cp $GITHUB_WORKSPACE/remove_msabi.py /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/remove_msabi.py
+          cp $GITHUB_WORKSPACE/generate_ccommands.py /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/generate_ccommands.py
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
   
@@ -85,7 +87,7 @@ jobs:
       # edk2 will be built inside the docker container.
       # We only build the 3C repo on the host.
       - name: Build 3C
-        working-directory: /home/sourag/repos/checkedc-llvm-project
+        working-directory: /home/sourag/repos2/checkedc-llvm-project
         run: |
           mkdir -p build
           cd build
@@ -99,7 +101,7 @@ jobs:
     steps:
       - name: Build docker image
         run: |
-          docker build -t edk2-3c $GITHUB_WORKSPACE
+          docker build -t edk2-3c2 $GITHUB_WORKSPACE
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
@@ -107,7 +109,7 @@ jobs:
       # if it is already runnig.
       - name: Check and remove the existing container
         run: |
-          CONTAINER_NAME="edk2-3c-container"
+          CONTAINER_NAME="edk2-3c-container2"
           if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
               echo "Container $CONTAINER_NAME is running. Killing and removing it..."
             docker kill $CONTAINER_NAME
@@ -121,8 +123,8 @@ jobs:
       # Start the container with both the edk2 and 3C repos mounted.
       - name: Start docker container
         run: |
-          docker run -di --name edk2-3c-container -v /home/sourag/repos/edk2:/edk2 -v \
-          /home/sourag/repos/checkedc-llvm-project:/checkedc-llvm-project edk2-3c
+          docker run -di --name edk2-3c-container2 -v /home/sourag/repos2/edk2:/edk2 -v \
+          /home/sourag/repos2/checkedc-llvm-project:/checkedc-llvm-project edk2-3c2
 
   build_edk2:
     runs-on: self-hosted
@@ -134,14 +136,14 @@ jobs:
         env:
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          if [ -d /home/sourag/repos/edk2/Build ]; then
-            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/edk2/Build
+          if [ -d /home/sourag/repos2/edk2/Build ]; then
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos2/edk2/Build
           fi
 
       # Normal build process for edk2, but inside the docker container.
       - name: Build edk2
         run: |
-          docker exec edk2-3c-container bash -c \
+          docker exec edk2-3c-container2 bash -c \
           "cd /edk2 \
           && source edksetup.sh \
           && make -C BaseTools \
@@ -150,7 +152,7 @@ jobs:
       # MS ABI causes issues with clang source manager.
       - name: Ramove ms_abi
         run: |
-          docker exec edk2-3c-container bash -c \
+          docker exec edk2-3c-container2 bash -c \
           "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
           && python3 remove_msabi.py"
 
@@ -164,17 +166,17 @@ jobs:
         env:
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons ]; then
-            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons
+          if [ -d /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons ]; then
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons
           fi
-          if [ -d /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed ]; then
-            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
+          if [ -d /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed ]; then
+            echo $PASSWORD | sudo -S rm -rf /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed
           fi
 
       # Invoke the script which calls 3c on all modules separately.
       - name: Run 3C
         run: |
-          docker exec edk2-3c-container bash -c \
+          docker exec edk2-3c-container2 bash -c \
           "cd /checkedc-llvm-project/clang/tools/3c/utils/port_tools \
           && python3 run_3c.py ${{ github.event.inputs.options }}"
 
@@ -186,9 +188,9 @@ jobs:
       - name: Copy results
         run: |
           mkdir -p results
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons results/jsons
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed results/failed
-          echo $PASSWORD | sudo -S cp -r /home/sourag/repos/edk2/out.checked results/src
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/jsons results/jsons
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos2/checkedc-llvm-project/clang/tools/3c/utils/port_tools/failed results/failed
+          echo $PASSWORD | sudo -S cp -r /home/sourag/repos2/edk2/out.checked results/src
           echo $PASSWORD | sudo -S chown -R $USER:$USER results
         env:
           PASSWORD: ${{ secrets.PASSWORD }}
@@ -209,5 +211,5 @@ jobs:
       # If we don't remove the container, the next run will fail.
       - name: Stop docker container
         run: |
-          docker stop edk2-3c-container
-          docker rm edk2-3c-container
+          docker stop edk2-3c-container2
+          docker rm edk2-3c-container2
